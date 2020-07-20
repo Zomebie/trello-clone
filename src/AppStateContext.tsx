@@ -1,5 +1,7 @@
 import React, { createContext, useReducer, useContext } from "react";
 import { nanoid } from "nanoid";
+import { moveItem } from "./moveItem";
+import { DragItem } from "./DragItem";
 
 const appData: AppState = {
   lists: [
@@ -19,6 +21,7 @@ const appData: AppState = {
       tasks: [{ id: "c3", text: "Begin to use static typing" }],
     },
   ],
+  draggedItem: undefined,
 };
 
 export type Task = {
@@ -34,6 +37,7 @@ type List = {
 
 export type AppState = {
   lists: List[];
+  draggedItem: DragItem | undefined;
 };
 
 const AppStateContext = createContext<AppStateContextProps>(
@@ -69,17 +73,31 @@ type Action =
   | {
       type: "ADD_TASK";
       payload: { text: string; listId: string };
+    }
+  | {
+      type: "MOVE_LIST";
+      payload: {
+        dragIndex: number;
+        hoverIndex: number;
+      };
+    }
+  | {
+      type: "SET_DRAGGED_ITEM";
+      payload: DragItem | undefined;
     };
 
 const appStateReducer = (state: AppState, action: Action): AppState => {
   switch (action.type) {
     case "ADD_LIST": {
+      const lists = state.lists.concat({
+        id: nanoid(),
+        text: action.payload,
+        tasks: [],
+      });
+
       return {
-        // ...state,
-        lists: [
-          ...state.lists,
-          { id: nanoid(), text: action.payload, tasks: [] },
-        ],
+        ...state,
+        lists,
       };
     }
 
@@ -90,7 +108,22 @@ const appStateReducer = (state: AppState, action: Action): AppState => {
         list.id === listId ? list.tasks.push({ id: nanoid(), text }) : list
       );
 
-      return { lists };
+      return {
+        ...state,
+        lists,
+      };
+    }
+
+    case "MOVE_LIST": {
+      const { dragIndex, hoverIndex } = action.payload;
+
+      const lists = moveItem(state.lists, dragIndex, hoverIndex);
+
+      return { ...state, lists };
+    }
+
+    case "SET_DRAGGED_ITEM": {
+      return { ...state, draggedItem: action.payload };
     }
 
     default: {

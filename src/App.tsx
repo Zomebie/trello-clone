@@ -9,10 +9,11 @@ const App = () => {
 
   return (
     <AppContainer>
-      {state.lists.map((list) => (
+      {state.lists.map((list, index) => (
         <Column
+          index={index}
           id={list.id}
-          title={list.text}
+          text={list.text}
           key={list.id}
           tasks={list.tasks}
         />
